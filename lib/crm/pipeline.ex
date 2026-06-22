@@ -3,10 +3,31 @@ defmodule Crm.Pipeline do
   alias Crm.Repo
   alias Crm.Pipeline.Lead
 
-  def list_leads do
+  def list_leads(filters \\ %{}) do
     from(l in Lead, order_by: [desc: l.inserted_at])
+    |> filter_by_search(filters[:search])
+    |> filter_by_status(filters[:status])
     |> Repo.all()
   end
+
+  defp filter_by_search(query, term) when is_binary(term) and byte_size(term) > 0 do
+    like = "%#{term}%"
+    from l in query,
+      where:
+        ilike(l.contact_person, ^like) or
+          ilike(l.company_name, ^like) or
+          ilike(l.email_address, ^like)
+  end
+
+  defp filter_by_search(query, _), do: query
+
+  defp filter_by_status(query, status)
+       when status in ~w[pending drafting awaiting_review approved sent failed] do
+    atom = String.to_existing_atom(status)
+    from l in query, where: l.already_emailed == ^atom
+  end
+
+  defp filter_by_status(query, _), do: query
 
   def list_pending_leads do
     from(l in Lead, where: l.already_emailed == :pending)

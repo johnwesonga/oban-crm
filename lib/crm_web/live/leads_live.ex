@@ -10,17 +10,20 @@ defmodule CrmWeb.LeadsLive do
 
     leads = Pipeline.list_leads()
 
-    {:ok, assign(socket, leads: leads, stats: compute_stats(leads), form: nil)}
+    {:ok,
+     assign(socket,
+       leads: leads,
+       stats: compute_stats(leads),
+       filters: %{search: "", status: "all"},
+       form: nil
+     )}
   end
 
   @impl true
-  def handle_info({:lead_updated, updated_lead}, socket) do
-    leads =
-      Enum.map(socket.assigns.leads, fn lead ->
-        if lead.id == updated_lead.id, do: updated_lead, else: lead
-      end)
-
-    {:noreply, assign(socket, leads: leads, stats: compute_stats(leads))}
+  def handle_info({:lead_updated, _updated_lead}, socket) do
+    leads = Pipeline.list_leads(socket.assigns.filters)
+    all_leads = Pipeline.list_leads()
+    {:noreply, assign(socket, leads: leads, stats: compute_stats(all_leads))}
   end
 
   @impl true
@@ -62,6 +65,12 @@ defmodule CrmWeb.LeadsLive do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not delete lead.")}
     end
+  end
+
+  def handle_event("filter", params, socket) do
+    filters = %{search: params["search"] || "", status: params["status"] || "all"}
+    leads = Pipeline.list_leads(filters)
+    {:noreply, assign(socket, leads: leads, filters: filters)}
   end
 
   def handle_event("validate", %{"lead" => params}, socket) do
@@ -128,6 +137,43 @@ defmodule CrmWeb.LeadsLive do
       </div>
 
       <div class="mx-auto max-w-7xl px-6 py-6 space-y-6">
+        <%!-- Search + filter row --%>
+        <form phx-change="filter" phx-submit="filter" class="flex flex-col sm:flex-row gap-3">
+          <input type="hidden" name="status" value={@filters.status} />
+          <div class="relative flex-1">
+            <.icon
+              name="hero-magnifying-glass-micro"
+              class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/40 pointer-events-none"
+            />
+            <input
+              type="text"
+              name="search"
+              value={@filters.search}
+              placeholder="Search contact, company, or email…"
+              phx-debounce="300"
+              class="input input-bordered w-full pl-9 text-sm"
+            />
+          </div>
+          <div class="flex flex-wrap gap-1">
+            <%= for {label, value} <- [{"All", "all"}, {"Pending", "pending"}, {"Drafting", "drafting"},
+                                        {"In Review", "awaiting_review"}, {"Approved", "approved"},
+                                        {"Sent", "sent"}, {"Failed", "failed"}] do %>
+              <button
+                type="button"
+                phx-click="filter"
+                phx-value-search={@filters.search}
+                phx-value-status={value}
+                class={[
+                  "btn btn-xs",
+                  if(@filters.status == value, do: "btn-primary", else: "btn-ghost")
+                ]}
+              >
+                {label}
+              </button>
+            <% end %>
+          </div>
+        </form>
+
         <%!-- Stats row --%>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div class="bg-base-200 rounded-xl p-4 flex flex-col gap-1">
