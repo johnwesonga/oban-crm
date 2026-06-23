@@ -326,7 +326,6 @@ defmodule CrmWeb.LeadsLive do
                       <.icon name="hero-bolt-micro" class="size-3.5" /> Draft
                     </button>
                     <.link
-                      :if={lead.already_emailed == :pending}
                       navigate={~p"/leads/#{lead.id}/edit"}
                       class="btn btn-xs btn-ghost"
                     >
