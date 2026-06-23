@@ -4,7 +4,20 @@ defmodule Crm.LLM do
   @default_model "anthropic:claude-haiku-4-5-20251001"
 
   def draft_email(%{} = lead) do
-    model = Application.get_env(:crm, :ai_model, @default_model)
+    # use local LLM either LM Studio or OMLX
+    ai_base_url = Application.get_env(:crm, :ai_base_url, "http://localhost:1234/v1")
+    ai_model = Application.get_env(:crm, :ai_model, @default_model)
+
+    local_model =
+      ReqLLM.model!(%{
+        id: ai_model,
+        base_url: ai_base_url,
+        provider: "openai",
+        max_tokens: 4096,
+        receive_timeout: 120_000
+      })
+
+    _model = Application.get_env(:crm, :ai_model, @default_model)
     Logger.info("CRM.LLM: drafting email for lead_id=#{lead.id}")
 
     context =
@@ -13,7 +26,7 @@ defmodule Crm.LLM do
         ReqLLM.Context.user(Crm.Llm.PromptBuilder.user_prompt(lead))
       ])
 
-    case ReqLLM.generate_text(model, context, max_tokens: 1024) do
+    case ReqLLM.generate_text(local_model, context) do
       {:ok, response} ->
         log_usage(response)
         Logger.info("CRM.LLM: response=#{inspect(response)}")

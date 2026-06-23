@@ -60,10 +60,26 @@ defmodule CrmWeb.LeadsLive do
     case Pipeline.delete_lead(lead) do
       {:ok, _} ->
         leads = Enum.reject(socket.assigns.leads, &(&1.id == lead.id))
-        {:noreply, socket |> assign(leads: leads, stats: compute_stats(leads)) |> put_flash(:info, "Lead deleted.")}
+
+        {:noreply,
+         socket
+         |> assign(leads: leads, stats: compute_stats(leads))
+         |> put_flash(:info, "Lead deleted.")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not delete lead.")}
+    end
+  end
+
+  def handle_event("draft_now", %{"id" => id}, socket) do
+    lead = Pipeline.get_lead!(id)
+
+    case Pipeline.enqueue_draft(lead) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Drafting started for #{lead.contact_person}.")}
+
+      {:error, :invalid_status} ->
+        {:noreply, put_flash(socket, :error, "Lead must be pending to draft.")}
     end
   end
 
@@ -301,6 +317,14 @@ defmodule CrmWeb.LeadsLive do
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      :if={lead.already_emailed == :pending}
+                      class="btn btn-xs btn-ghost text-info"
+                      phx-click="draft_now"
+                      phx-value-id={lead.id}
+                    >
+                      <.icon name="hero-bolt-micro" class="size-3.5" /> Draft
+                    </button>
                     <.link
                       :if={lead.already_emailed == :pending}
                       navigate={~p"/leads/#{lead.id}/edit"}

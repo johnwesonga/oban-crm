@@ -86,3 +86,8 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :crm,
+  anthropic_api_key: System.get_env("ANTHROPIC_API_KEY"),
+  ai_model: "mistralai/devstral-small-2-2512",
+  ai_base_url: "http://localhost:1234/v1"

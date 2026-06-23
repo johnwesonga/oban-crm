@@ -88,5 +88,3 @@ config :crm, Oban,
     # Up to 3 concurrent email sends
     sending: 3
   ]
-
-config :crm, ai_model: "anthropic:claude-haiku-4-5-20251001"

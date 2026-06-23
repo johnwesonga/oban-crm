@@ -80,12 +80,14 @@ defmodule Crm.PipelineTest do
   describe "list_leads/1 — status filter" do
     test "filters by a specific status" do
       pending_lead = create_lead(%{})
-      {:ok, sent_lead} = Pipeline.create_lead(%{
-        contact_person: "Sent Person",
-        company_name: "Sent Corp",
-        email_address: "sent@example.com",
-        already_emailed: :sent
-      })
+
+      {:ok, sent_lead} =
+        Pipeline.create_lead(%{
+          contact_person: "Sent Person",
+          company_name: "Sent Corp",
+          email_address: "sent@example.com",
+          already_emailed: :sent
+        })
 
       pending_results = Pipeline.list_leads(%{status: "pending"})
       sent_results = Pipeline.list_leads(%{status: "sent"})
@@ -110,12 +112,13 @@ defmodule Crm.PipelineTest do
     test "applies both filters with AND logic" do
       _alice_pending = create_lead(%{contact_person: "Alice A", already_emailed: :pending})
 
-      {:ok, alice_sent} = Pipeline.create_lead(%{
-        contact_person: "Alice B",
-        company_name: "Corp",
-        email_address: "aliceb@corp.com",
-        already_emailed: :sent
-      })
+      {:ok, alice_sent} =
+        Pipeline.create_lead(%{
+          contact_person: "Alice B",
+          company_name: "Corp",
+          email_address: "aliceb@corp.com",
+          already_emailed: :sent
+        })
 
       _bob_pending = create_lead(%{contact_person: "Bob C"})
 

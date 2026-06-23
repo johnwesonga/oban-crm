@@ -90,12 +90,13 @@ defmodule CrmWeb.LeadsLiveTest do
     test "clicking a status pill filters by that status", %{conn: conn} do
       create_lead(%{contact_person: "Pending Lead"})
 
-      {:ok, _alice_sent} = Pipeline.create_lead(%{
-        contact_person: "Sent Lead",
-        company_name: "Corp",
-        email_address: "sent#{System.unique_integer([:positive])}@corp.com",
-        already_emailed: :sent
-      })
+      {:ok, _alice_sent} =
+        Pipeline.create_lead(%{
+          contact_person: "Sent Lead",
+          company_name: "Corp",
+          email_address: "sent#{System.unique_integer([:positive])}@corp.com",
+          already_emailed: :sent
+        })
 
       {:ok, view, _html} = live(conn, ~p"/leads")
 
@@ -119,12 +120,13 @@ defmodule CrmWeb.LeadsLiveTest do
     test "search and status compose with AND logic", %{conn: conn} do
       create_lead(%{contact_person: "Alice Pending"})
 
-      {:ok, _} = Pipeline.create_lead(%{
-        contact_person: "Alice Sent",
-        company_name: "Corp",
-        email_address: "alicesent#{System.unique_integer([:positive])}@corp.com",
-        already_emailed: :sent
-      })
+      {:ok, _} =
+        Pipeline.create_lead(%{
+          contact_person: "Alice Sent",
+          company_name: "Corp",
+          email_address: "alicesent#{System.unique_integer([:positive])}@corp.com",
+          already_emailed: :sent
+        })
 
       {:ok, view, _html} = live(conn, ~p"/leads")
 

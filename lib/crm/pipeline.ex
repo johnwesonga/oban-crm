@@ -12,6 +12,7 @@ defmodule Crm.Pipeline do
 
   defp filter_by_search(query, term) when is_binary(term) and byte_size(term) > 0 do
     like = "%#{term}%"
+
     from l in query,
       where:
         ilike(l.contact_person, ^like) or
@@ -46,6 +47,18 @@ defmodule Crm.Pipeline do
     |> Lead.changeset(attrs)
     |> Repo.insert()
   end
+
+  def enqueue_draft(%Lead{already_emailed: :pending} = lead) do
+    with {:ok, updated_lead} <- update_lead_status(lead.id, :drafting) do
+      %{"lead_id" => updated_lead.id}
+      |> Crm.Workers.DraftEmailWorker.new()
+      |> Oban.insert()
+
+      {:ok, updated_lead}
+    end
+  end
+
+  def enqueue_draft(_lead), do: {:error, :invalid_status}
 
   def update_lead_status(lead_id, status) do
     lead = get_lead!(lead_id)

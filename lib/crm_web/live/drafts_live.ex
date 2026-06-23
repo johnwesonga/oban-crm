@@ -238,7 +238,9 @@ defmodule CrmWeb.DraftsLive do
                 <.icon name="hero-x-mark-micro" class="size-4" /> Reject
               </button>
               <span class="ml-auto text-xs text-base-content/30">
-                Drafted {if lead.drafted_at, do: Calendar.strftime(lead.drafted_at, "%b %d at %H:%M"), else: "—"}
+                Drafted {if lead.drafted_at,
+                  do: Calendar.strftime(lead.drafted_at, "%b %d at %H:%M"),
+                  else: "—"}
               </span>
             </div>
           </div>
