@@ -74,6 +74,24 @@ defmodule CrmWeb.DraftsLive do
   end
 
   @impl true
+  def handle_event("regenerate", %{"id" => id}, socket) do
+    lead = Pipeline.get_lead!(id)
+
+    case Pipeline.regenerate_draft(lead) do
+      {:ok, _} ->
+        leads = Enum.reject(socket.assigns.leads, &(to_string(&1.id) == id))
+
+        {:noreply,
+         socket
+         |> assign(leads: leads)
+         |> put_flash(:info, "Regenerating draft for #{lead.contact_person}.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not regenerate draft.")}
+    end
+  end
+
+  @impl true
   def handle_event("reject", %{"id" => id}, socket) do
     case Pipeline.update_lead_status(String.to_integer(id), :pending) do
       {:ok, _} ->
@@ -236,6 +254,13 @@ defmodule CrmWeb.DraftsLive do
                 phx-value-id={lead.id}
               >
                 <.icon name="hero-x-mark-micro" class="size-4" /> Reject
+              </button>
+              <button
+                class="btn btn-ghost btn-sm gap-1.5 text-info"
+                phx-click="regenerate"
+                phx-value-id={lead.id}
+              >
+                <.icon name="hero-arrow-path-micro" class="size-4" /> Regenerate
               </button>
               <span class="ml-auto text-xs text-base-content/30">
                 Drafted {if lead.drafted_at,

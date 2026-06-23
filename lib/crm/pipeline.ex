@@ -57,6 +57,15 @@ defmodule Crm.Pipeline do
 
   def retry_lead(_lead), do: {:error, :invalid_status}
 
+  def regenerate_draft(%Lead{already_emailed: :awaiting_review} = lead) do
+    with {:ok, updated_lead} <- lead |> Lead.status_changeset(:pending) |> Repo.update() do
+      broadcast_lead_updated(updated_lead)
+      enqueue_draft(updated_lead)
+    end
+  end
+
+  def regenerate_draft(_lead), do: {:error, :invalid_status}
+
   def enqueue_draft(%Lead{already_emailed: :pending} = lead) do
     with {:ok, updated_lead} <- update_lead_status(lead.id, :drafting) do
       %{"lead_id" => updated_lead.id}
