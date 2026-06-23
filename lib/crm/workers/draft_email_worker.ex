@@ -7,7 +7,11 @@ defmodule Crm.Workers.DraftEmailWorker do
 
   @impl Oban.Worker
 
-  def perform(%Oban.Job{args: %{"lead_id" => lead_id}}) do
+  def perform(%Oban.Job{
+        args: %{"lead_id" => lead_id},
+        attempt: attempt,
+        max_attempts: max_attempts
+      }) do
     lead = Crm.Pipeline.get_lead!(lead_id)
 
     Logger.info("DraftEmailWorker: drafting email for lead #{lead_id}")
@@ -30,6 +34,7 @@ defmodule Crm.Workers.DraftEmailWorker do
           "DraftEmailWorker: failed to draft email for lead #{lead_id}: #{inspect(reason)}"
         )
 
+        if attempt >= max_attempts, do: Crm.Pipeline.record_error(lead_id, reason)
         {:error, reason}
     end
   end

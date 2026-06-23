@@ -71,6 +71,18 @@ defmodule CrmWeb.LeadsLive do
     end
   end
 
+  def handle_event("retry", %{"id" => id}, socket) do
+    lead = Pipeline.get_lead!(id)
+
+    case Pipeline.retry_lead(lead) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Retrying draft for #{lead.contact_person}.")}
+
+      {:error, :invalid_status} ->
+        {:noreply, put_flash(socket, :error, "Only failed leads can be retried.")}
+    end
+  end
+
   def handle_event("draft_now", %{"id" => id}, socket) do
     lead = Pipeline.get_lead!(id)
 
@@ -317,6 +329,15 @@ defmodule CrmWeb.LeadsLive do
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      :if={lead.already_emailed == :failed}
+                      class="btn btn-xs btn-ghost text-warning"
+                      phx-click="retry"
+                      phx-value-id={lead.id}
+                      title={lead.last_error}
+                    >
+                      <.icon name="hero-arrow-path-micro" class="size-3.5" /> Retry
+                    </button>
                     <button
                       :if={lead.already_emailed == :pending}
                       class="btn btn-xs btn-ghost text-info"
