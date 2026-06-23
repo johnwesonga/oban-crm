@@ -8,14 +8,19 @@ defmodule CrmWeb.LeadsLive do
   def mount(_params, _session, socket) do
     if connected?(socket), do: Phoenix.PubSub.subscribe(Crm.PubSub, "leads")
 
-    leads = Pipeline.list_leads()
+    filters = %{search: "", status: "all"}
+    leads = Pipeline.list_leads(filters)
+    all_leads = Pipeline.list_leads()
 
     {:ok,
      assign(socket,
        leads: leads,
-       stats: compute_stats(leads),
-       filters: %{search: "", status: "all"},
-       form: nil
+       stats: compute_stats(all_leads),
+       filters: filters,
+       form: nil,
+       page: 1,
+       per_page: 10,
+       filtered_count: length(leads)
      )}
   end
 
@@ -23,7 +28,9 @@ defmodule CrmWeb.LeadsLive do
   def handle_info({:lead_updated, _updated_lead}, socket) do
     leads = Pipeline.list_leads(socket.assigns.filters)
     all_leads = Pipeline.list_leads()
-    {:noreply, assign(socket, leads: leads, stats: compute_stats(all_leads))}
+
+    {:noreply,
+     assign(socket, leads: leads, stats: compute_stats(all_leads), filtered_count: length(leads))}
   end
 
   @impl true
@@ -63,7 +70,7 @@ defmodule CrmWeb.LeadsLive do
 
         {:noreply,
          socket
-         |> assign(leads: leads, stats: compute_stats(leads))
+         |> assign(leads: leads, stats: compute_stats(leads), filtered_count: length(leads))
          |> put_flash(:info, "Lead deleted.")}
 
       {:error, _} ->
@@ -98,13 +105,20 @@ defmodule CrmWeb.LeadsLive do
   def handle_event("filter", params, socket) do
     filters = %{search: params["search"] || "", status: params["status"] || "all"}
     leads = Pipeline.list_leads(filters)
-    {:noreply, assign(socket, leads: leads, filters: filters)}
+
+    {:noreply,
+     assign(socket, leads: leads, filters: filters, page: 1, filtered_count: length(leads))}
   end
 
   def handle_event("validate", %{"lead" => params}, socket) do
     lead = socket.assigns.editing_lead || %Lead{}
     changeset = Pipeline.change_lead(lead, params) |> Map.put(:action, :validate)
     {:noreply, assign(socket, form: to_form(changeset))}
+  end
+
+  @impl true
+  def handle_event("paginate", %{"page" => page}, socket) do
+    {:noreply, assign(socket, page: String.to_integer(page))}
   end
 
   defp create_lead(socket, params) do
@@ -131,7 +145,7 @@ defmodule CrmWeb.LeadsLive do
         {:noreply,
          socket
          |> put_flash(:info, "Lead updated.")
-         |> assign(leads: leads, stats: compute_stats(leads))
+         |> assign(leads: leads, stats: compute_stats(leads), page: 1)
          |> push_navigate(to: ~p"/leads")}
 
       {:error, changeset} ->
@@ -275,6 +289,46 @@ defmodule CrmWeb.LeadsLive do
           </div>
         </div>
 
+        <%!-- Pagination controls --%>
+        <% pages = total_pages(@filtered_count, @per_page) %>
+        <%= if pages > 1 do %>
+          <div class="flex items-center justify-between mt-4 px-1">
+            <p class="text-xs text-base-content/40">
+              Page {@page} of {pages}
+            </p>
+            <div class="join">
+              <button
+                phx-click="paginate"
+                phx-value-page={@page - 1}
+                disabled={@page == 1}
+                class="join-item btn btn-sm btn-ghost disabled:opacity-30"
+              >
+                <.icon name="hero-chevron-left" class="size-4" /> Prev
+              </button>
+              <%= for p <- max(1, @page - 2)..min(pages, @page + 2) do %>
+                <button
+                  phx-click="paginate"
+                  phx-value-page={p}
+                  class={[
+                    "join-item btn btn-sm",
+                    if(p == @page, do: "btn-primary", else: "btn-ghost")
+                  ]}
+                >
+                  {p}
+                </button>
+              <% end %>
+              <button
+                phx-click="paginate"
+                phx-value-page={@page + 1}
+                disabled={@page >= pages}
+                class="join-item btn btn-sm btn-ghost disabled:opacity-30"
+              >
+                Next <.icon name="hero-chevron-right" class="size-4" />
+              </button>
+            </div>
+          </div>
+        <% end %>
+
         <%!-- Leads table --%>
         <div class="rounded-xl border border-base-300 overflow-hidden">
           <table class="w-full text-sm">
@@ -306,7 +360,7 @@ defmodule CrmWeb.LeadsLive do
                 </td>
               </tr>
               <tr
-                :for={lead <- @leads}
+                :for={lead <- page_leads(@leads, @page, @per_page)}
                 class="border-t border-base-300 hover:bg-base-200/50 transition-colors group"
               >
                 <td class="px-4 py-3 font-medium">{lead.contact_person}</td>
@@ -393,4 +447,10 @@ defmodule CrmWeb.LeadsLive do
   defp status_dot_class(:approved), do: "bg-accent"
   defp status_dot_class(:sent), do: "bg-success"
   defp status_dot_class(:failed), do: "bg-error"
+
+  defp page_leads(leads, page, per_page) do
+    Enum.slice(leads, (page - 1) * per_page, per_page)
+  end
+
+  defp total_pages(count, per_page), do: div(count + per_page - 1, per_page)
 end
