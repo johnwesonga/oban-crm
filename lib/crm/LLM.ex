@@ -18,7 +18,7 @@ defmodule Crm.LLM do
       })
 
     _model = Application.get_env(:crm, :ai_model, @default_model)
-    Logger.info("CRM.LLM: drafting email for lead_id=#{lead.id}")
+    Logger.info("CRM.LLM: drafting email for lead_id=#{lead.id} with ai_model:#{ai_model}")
 
     context =
       ReqLLM.Context.new([
@@ -28,7 +28,7 @@ defmodule Crm.LLM do
 
     case ReqLLM.generate_text(local_model, context) do
       {:ok, response} ->
-        log_usage(response)
+        # log_usage(response)
         Logger.info("CRM.LLM: response=#{inspect(response)}")
 
         response

@@ -89,5 +89,7 @@ config :swoosh, :api_client, false
 
 config :crm,
   anthropic_api_key: System.get_env("ANTHROPIC_API_KEY"),
-  ai_model: "mistralai/devstral-small-2-2512",
-  ai_base_url: "http://localhost:1234/v1"
+  # ai_model: "mistralai/devstral-small-2-2512",
+  ai_model: "gemma-4-e4b-it-OptiQ-4bit",
+  # "http://localhost:1234/v1"
+  ai_base_url: "http://localhost:8000/v1"
