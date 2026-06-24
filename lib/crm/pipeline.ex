@@ -48,7 +48,7 @@ defmodule Crm.Pipeline do
     |> Repo.insert()
   end
 
-  def retry_lead(%Lead{already_emailed: :failed} = lead) do
+  def retry_lead(%Lead{already_emailed: status} = lead) when status in [:failed, :drafting] do
     with {:ok, updated_lead} <- lead |> Lead.status_changeset(:pending) |> Repo.update() do
       broadcast_lead_updated(updated_lead)
       enqueue_draft(updated_lead)

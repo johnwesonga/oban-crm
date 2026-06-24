@@ -86,7 +86,7 @@ defmodule CrmWeb.LeadsLive do
         {:noreply, put_flash(socket, :info, "Retrying draft for #{lead.contact_person}.")}
 
       {:error, :invalid_status} ->
-        {:noreply, put_flash(socket, :error, "Only failed leads can be retried.")}
+        {:noreply, put_flash(socket, :error, "Only failed or stuck drafting leads can be retried.")}
     end
   end
 
@@ -384,11 +384,11 @@ defmodule CrmWeb.LeadsLive do
                 <td class="px-4 py-3">
                   <div class="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      :if={lead.already_emailed == :failed}
+                      :if={lead.already_emailed in [:failed, :drafting]}
                       class="btn btn-xs btn-ghost text-warning"
                       phx-click="retry"
                       phx-value-id={lead.id}
-                      title={lead.last_error}
+                      title={if lead.already_emailed == :failed, do: lead.last_error, else: "Stuck in drafting — click to re-queue"}
                     >
                       <.icon name="hero-arrow-path-micro" class="size-3.5" /> Retry
                     </button>
