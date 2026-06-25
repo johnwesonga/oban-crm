@@ -86,7 +86,8 @@ defmodule CrmWeb.LeadsLive do
         {:noreply, put_flash(socket, :info, "Retrying draft for #{lead.contact_person}.")}
 
       {:error, :invalid_status} ->
-        {:noreply, put_flash(socket, :error, "Only failed or stuck drafting leads can be retried.")}
+        {:noreply,
+         put_flash(socket, :error, "Only failed or stuck drafting leads can be retried.")}
     end
   end
 
@@ -156,7 +157,7 @@ defmodule CrmWeb.LeadsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-base-100">
+    <Layouts.app flash={@flash}>
       <%!-- Page header --%>
       <div class="border-b border-base-300 bg-base-100 px-6 py-5">
         <div class="mx-auto max-w-7xl flex items-center justify-between">
@@ -279,6 +280,16 @@ defmodule CrmWeb.LeadsLive do
                 placeholder="jane@acme.com"
                 required
               />
+              <div class="sm:col-span-3">
+                <.input
+                  field={@form[:company_context]}
+                  type="textarea"
+                  label="Company Context"
+                  placeholder="What does this company do? Any pain points, relationship notes, or context to inform the email…"
+                  rows="3"
+                  class="w-full font-sans text-sm resize-y"
+                />
+              </div>
               <div class="sm:col-span-3 flex gap-3 pt-1">
                 <.button type="submit" variant="primary">
                   {if @live_action == :new, do: "Create lead", else: "Save changes"}
@@ -388,7 +399,11 @@ defmodule CrmWeb.LeadsLive do
                       class="btn btn-xs btn-ghost text-warning"
                       phx-click="retry"
                       phx-value-id={lead.id}
-                      title={if lead.already_emailed == :failed, do: lead.last_error, else: "Stuck in drafting — click to re-queue"}
+                      title={
+                        if lead.already_emailed == :failed,
+                          do: lead.last_error,
+                          else: "Stuck in drafting — click to re-queue"
+                      }
                     >
                       <.icon name="hero-arrow-path-micro" class="size-3.5" /> Retry
                     </button>
@@ -400,6 +415,13 @@ defmodule CrmWeb.LeadsLive do
                     >
                       <.icon name="hero-bolt-micro" class="size-3.5" /> Draft
                     </button>
+                    <.link
+                      :if={lead.already_emailed == :awaiting_review}
+                      navigate={~p"/draft/#{lead.id}"}
+                      class="btn btn-xs btn-ghost text-warning"
+                    >
+                      <.icon name="hero-envelope-open-micro" class="size-3.5" /> Review
+                    </.link>
                     <.link
                       navigate={~p"/leads/#{lead.id}/edit"}
                       class="btn btn-xs btn-ghost"
@@ -421,7 +443,7 @@ defmodule CrmWeb.LeadsLive do
           </table>
         </div>
       </div>
-    </div>
+    </Layouts.app>
     """
   end
 

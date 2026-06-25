@@ -9,6 +9,7 @@ defmodule Crm.Pipeline.Lead do
     field :contact_person, :string
     field :company_name, :string
     field :already_emailed, Ecto.Enum, values: @already_emailed_values, default: :pending
+    field :company_context, :string
     field :draft_subject, :string
     field :draft_body, :string
     field :drafted_at, :utc_datetime
@@ -21,6 +22,7 @@ defmodule Crm.Pipeline.Lead do
   @required_fields [:email_address, :contact_person, :company_name]
   @optional_fields [
     :already_emailed,
+    :company_context,
     :draft_subject,
     :draft_body,
     :drafted_at,

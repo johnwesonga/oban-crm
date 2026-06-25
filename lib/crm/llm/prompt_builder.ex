@@ -22,21 +22,24 @@ defmodule Crm.Llm.PromptBuilder do
     """
   end
 
-  def user_prompt(%{
-        contact_person: contact_person,
-        company_name: company_name,
-        email_address: email_address
-      }) do
+  def user_prompt(lead) do
+    context_section =
+      case lead.company_context do
+        nil -> ""
+        "" -> ""
+        ctx -> "\nAdditional context about #{lead.company_name}:\n#{ctx}\n"
+      end
+
     """
     Draft a personalized outreach email for the following lead:
 
-    Contact person: #{contact_person}
-    Company: #{company_name}
-    Email: #{email_address}
-
+    Contact person: #{lead.contact_person}
+    Company: #{lead.company_name}
+    Email: #{lead.email_address}
+    #{context_section}
     The email should:
-    1. Address #{contact_person} by first name
-    2. Reference #{company_name} specifically — don't be generic
+    1. Address #{lead.contact_person} by first name
+    2. Reference #{lead.company_name} specifically — don't be generic
     3. Briefly introduce our service and why it's relevant to them
     4. End with a single, low-friction call to action (e.g. a 20 min call)
 

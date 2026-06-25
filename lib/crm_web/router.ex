@@ -24,6 +24,7 @@ defmodule CrmWeb.Router do
     live "/leads/new", LeadsLive, :new
     live "/leads/:id/edit", LeadsLive, :edit
     live "/drafts", DraftsLive
+    live "/draft/:id", DraftLive
   end
 
   # Other scopes may use custom stacks.

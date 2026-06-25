@@ -110,7 +110,7 @@ defmodule CrmWeb.DraftsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-base-100">
+    <Layouts.app flash={@flash}>
       <%!-- Page header --%>
       <div class="border-b border-base-300 bg-base-100 px-6 py-5">
         <div class="mx-auto max-w-4xl flex items-center justify-between">
@@ -271,7 +271,7 @@ defmodule CrmWeb.DraftsLive do
           </div>
         </div>
       </div>
-    </div>
+    </Layouts.app>
     """
   end
 end
